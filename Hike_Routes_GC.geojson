@@ -1,257 +1,52 @@
-// ruta-detail.js - Funcionalidades específicas para páginas de rutas individuales
-
-document.addEventListener('DOMContentLoaded', function() {
-    // 1. Inicializar Swiper (carrusel)
-    const swiper = new Swiper('.swiper', {
-        direction: 'horizontal',
-        loop: true,
-        slidesPerView: 1,
-        spaceBetween: 30,
-        autoplay: {
-            delay: 5000,
-            disableOnInteraction: false,
-        },
-        pagination: {
-            el: '.swiper-pagination',
-            clickable: true,
-        },
-        navigation: {
-            nextEl: '.swiper-button-next',
-            prevEl: '.swiper-button-pagination',
-        },
-        breakpoints: {
-            768: {
-                slidesPerView: 1,
-                spaceBetween: 20,
-            },
-            1024: {
-                slidesPerView: 1,
-                spaceBetween: 30,
-            },
-        },
-    });
-
-    // 2. Determinar qué ruta está siendo visualizada
-    const rutaName = document.title.split(' - ')[0].toLowerCase();
-    
-    // 3. URL del GeoJSON en GitHub
-    const geoJsonUrl = 'https://raw.githubusercontent.com/tu-usuario/tu-repo/master/rutas.geojson';
-    
-    // 4. Inicializar mapa
-    const rutaMap = L.map('ruta-map').setView([27.9667, -15.6133], 13);
-
-    // Capa base
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors'
-    }).addTo(rutaMap);
-
-    // 5. Función para cargar y mostrar la ruta específica
-    function loadRouteFromGeoJson(rutaName) {
-        fetch(geoJsonUrl)
-            .then(response => response.json())
-            .then(geojsonData => {
-                // Buscar la feature que corresponde a la ruta actual
-                const routeFeature = geojsonData.features.find(feature => {
-                    const nombre = feature.properties.nombre.toLowerCase();
-                    return nombre.includes(rutaName) || rutaName.includes(nombre);
-                });
-
-                if (routeFeature) {
-                    const coordinates = routeFeature.geometry.coordinates;
-                    const properties = routeFeature.properties;
-                    
-                    // Convertir coordenadas [lng, lat] a [lat, lng] para Leaflet
-                    const latLngCoords = coordinates.map(coord => [coord[1], coord[0]]);
-                    
-                    // Dibujar la ruta
-                    const rutaLine = L.polyline(latLngCoords, {
-                        color: properties.color || '#27ae60',
-                        weight: 4,
-                        opacity: 0.7,
-                        dashArray: '10, 10'
-                    }).addTo(rutaMap);
-                    
-                    // Marcador de inicio
-                    const startMarker = L.marker(latLngCoords[0]).addTo(rutaMap)
-                        .bindPopup(`<strong>${properties.inicio || 'Inicio'}</strong><br>${properties.descripcion_inicio || ''}`)
-                        .openPopup();
-                    
-                    // Marcador de fin
-                    const endMarker = L.marker(latLngCoords[latLngCoords.length - 1]).addTo(rutaMap)
-                        .bindPopup(`<strong>${properties.fin || 'Final'}</strong><br>${properties.descripcion_fin || ''}`)
-                        .openPopup();
-                    
-                    // Ajustar vista para mostrar toda la ruta
-                    rutaMap.fitBounds(rutaLine.getBounds());
-                } else {
-                    console.warn(`No se encontró la ruta "${rutaName}" en el GeoJSON`);
-                    showDefaultRoute();
-                }
-            })
-            .catch(error => {
-                console.error('Error cargando el GeoJSON:', error);
-                showDefaultRoute();
-            });
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Roque Nublo desde La Goleta",
+        "color": "#27ae60",
+        "inicio": "La Goleta",
+        "fin": "Roque Nublo",
+        "descripcion_inicio": "Parking y punto de partida",
+        "descripcion_fin": "Monolito sagrado - 1.813 m",
+        "dificultad": "media",
+        "distancia": 5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-15.610, 27.973],
+          [-15.611, 27.972],
+          [-15.612, 27.971],
+          [-15.613, 27.970],
+          [-15.614, 27.968],
+          [-15.613, 27.966]
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "nombre": "Caldera de Bandama",
+        "color": "#3498db",
+        "inicio": "Mirador de Bandama",
+        "fin": "Fondo del cráter",
+        "descripcion_inicio": "Mirador panorámico",
+        "descripcion_fin": "Centro del volcán",
+        "dificultad": "media",
+        "distancia": 3.5
+      },
+      "geometry": {
+        "type": "LineString",
+        "coordinates": [
+          [-15.462, 28.045],
+          [-15.463, 28.044],
+          [-15.464, 28.043],
+          [-15.465, 28.042],
+          [-15.466, 28.041]
+        ]
+      }
     }
-
-    // 6. Función para mostrar ruta por defecto si hay error
-    function showDefaultRoute() {
-        // Coordenadas por defecto para Roque Nublo
-        const defaultCoords = [
-            [27.973, -15.610],
-            [27.972, -15.611],
-            [27.971, -15.612],
-            [27.970, -15.613],
-            [27.968, -15.614],
-            [27.966, -15.613],
-        ];
-        
-        const defaultLine = L.polyline(defaultCoords, {
-            color: '#27ae60',
-            weight: 4,
-            opacity: 0.7,
-            dashArray: '10, 10'
-        }).addTo(rutaMap);
-        
-        const startMarker = L.marker(defaultCoords[0]).addTo(rutaMap)
-            .bindPopup('<strong>Inicio: La Goleta</strong><br>Parking y punto de partida')
-            .openPopup();
-
-        const endMarker = L.marker(defaultCoords[defaultCoords.length - 1]).addTo(rutaMap)
-            .bindPopup('<strong>Roque Nublo</strong><br>Monolito sagrado - 1.813 m')
-            .openPopup();
-        
-        rutaMap.fitBounds(defaultLine.getBounds());
-    }
-
-    // 7. Cargar la ruta correspondiente
-    loadRouteFromGeoJson(rutaName);
-
-    // 8. Funcionalidad de compartir ruta
-    document.getElementById('share-route').addEventListener('click', function() {
-        if (navigator.share) {
-            navigator.share({
-                title: document.title,
-                text: 'Descubre esta increíble ruta de senderismo en Gran Canaria',
-                url: window.location.href,
-            })
-            .then(() => console.log('Contenido compartido exitosamente'))
-            .catch((error) => console.log('Error al compartir:', error));
-        } else {
-            navigator.clipboard.writeText(window.location.href)
-                .then(() => {
-                    alert('¡Enlace copiado al portapapeles! Compártelo con quien quieras.');
-                })
-                .catch(err => {
-                    console.error('Error al copiar:', err);
-                });
-        }
-    });
-
-    // 9. Funcionalidad de descarga de track
-    document.querySelectorAll('.btn-download').forEach(btn => {
-        btn.addEventListener('click', function(e) {
-            const format = this.getAttribute('href').includes('.gpx') ? 'GPX' : 'KML';
-            console.log(`Iniciando descarga de track en formato ${format}`);
-            // Aquí podrías añadir tracking de descargas si es necesario
-        });
-    });
-
-    // 10. Mostrar/ocultar información detallada
-    const infoCards = document.querySelectorAll('.info-card');
-    infoCards.forEach(card => {
-        card.addEventListener('click', function() {
-            this.classList.toggle('expanded');
-        });
-    });
-
-    // 11. Inicializar tooltips para iconos
-    const tooltipElements = document.querySelectorAll('[data-tooltip]');
-    tooltipElements.forEach(element => {
-        element.addEventListener('mouseenter', function() {
-            const tooltip = document.createElement('div');
-            tooltip.className = 'tooltip';
-            tooltip.textContent = this.getAttribute('data-tooltip');
-            document.body.appendChild(tooltip);
-            
-            const rect = this.getBoundingClientRect();
-            tooltip.style.left = rect.left + 'px';
-            tooltip.style.top = (rect.top - tooltip.offsetHeight - 10) + 'px';
-            
-            this.tooltip = tooltip;
-        });
-        
-        element.addEventListener('mouseleave', function() {
-            if (this.tooltip) {
-                this.tooltip.remove();
-                this.tooltip = null;
-            }
-        });
-    });
-
-    // 12. Control de altura dinámica del mapa
-    function adjustMapHeight() {
-        const mapContainer = document.getElementById('ruta-map');
-        if (window.innerWidth < 768) {
-            mapContainer.style.height = '300px';
-        } else {
-            mapContainer.style.height = '400px';
-        }
-    }
-
-    adjustMapHeight();
-    window.addEventListener('resize', adjustMapHeight);
-
-    // 13. Navegación por teclado en el carrusel
-    document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowLeft') {
-            swiper.slidePrev();
-        } else if (e.key === 'ArrowRight') {
-            swiper.slideNext();
-        }
-    });
-
-    // 14. Cargar datos meteorológicos (ejemplo con API)
-    function loadWeatherData() {
-        const lat = 27.9667;
-        const lon = -15.6133;
-        
-        // Ejemplo de llamada a API meteorológica
-        // fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&units=metric&appid=TU_API_KEY`)
-        // .then(response => response.json())
-        // .then(data => {
-        //     console.log('Datos meteorológicos:', data);
-        //     // Actualizar UI con datos meteorológicos
-        // })
-        // .catch(error => console.error('Error cargando datos meteorológicos:', error));
-    }
-
-    loadWeatherData();
-});
-
-// 15. Funcionalidad para calcular tiempo estimado
-function calculateEstimatedTime(distance, difficulty, userPace = 'normal') {
-    const paceFactors = {
-        'slow': 1.3,
-        'normal': 1.0,
-        'fast': 0.7
-    };
-    
-    const difficultyFactors = {
-        'baja': 3.0, // km/h
-        'media': 2.5,
-        'alta': 2.0
-    };
-    
-    const pace = paceFactors[userPace] || 1.0;
-    const speed = difficultyFactors[difficulty] || 2.5;
-    
-    const hours = distance / (speed * pace);
-    const minutes = Math.round((hours - Math.floor(hours)) * 60);
-    
-    return {
-        hours: Math.floor(hours),
-        minutes: minutes,
-        totalMinutes: Math.round(hours * 60)
-    };
+  ]
 }
